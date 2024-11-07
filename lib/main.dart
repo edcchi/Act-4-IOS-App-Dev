@@ -78,10 +78,46 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _deleteTask(Task task) {
-    ApiService().deleteTask(task.id).then((_) {
+  void _confirmDeleteTask(int id) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.grey[850],
+        title: const Text(
+          'Delete Task',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: const Text(
+          'Are you sure you want to delete this task?',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context), // Close the dialog
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Colors.grey),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // Close the dialog
+              _deleteTask(id); // Proceed to delete task
+            },
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: Colors.redAccent),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _deleteTask(int id) {
+    ApiService().deleteTask(id).then((_) {
       setState(() {
-        _tasks.remove(task); // Remove the deleted task from the local list
+        _tasks.removeWhere((task) => task.id == id); // Remove the deleted task from the local list
       });
     }).catchError((error) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -109,41 +145,34 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: Colors.black87,
       appBar: AppBar(
-        title: Text(
-          'To-Do List',
-          style: google_fonts.GoogleFonts.poppins(
-            fontWeight: FontWeight.bold,
-            fontSize: 27,
-          ), // Poppins font
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.grey[900],
-      ),
+        title: Text('To-Do List', style: google_fonts.GoogleFonts.poppins(
+          fontSize: 27,
+          fontWeight: FontWeight.bold
+        ), // Apply Poppins font here
+  ),
+  centerTitle: true,
+  backgroundColor: Colors.grey[900],
+),
+
       body: _tasks.isEmpty
           ? const Center(child: Text('No tasks yet!', style: TextStyle(color: Colors.white)))
-          : ListView.builder(
-              itemCount: _tasks.length,
-              itemBuilder: (context, index) {
-                final task = _tasks[index];
-
+          : ListView(
+              children: _tasks.map((task) {
                 return ListTile(
                   title: Text(task.title, style: const TextStyle(color: Colors.white)),
                   subtitle: Text(task.description, style: const TextStyle(color: Colors.grey)),
-                  onTap: () => _editTask(task),
                   trailing: IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () {
-                      // When delete button is pressed, remove task
-                      _deleteTask(task);
-                    },
+                    icon: const Icon(Icons.delete, color: Colors.redAccent),
+                    onPressed: () => _confirmDeleteTask(task.id), // Show confirmation dialog
                   ),
+                  onTap: () => _editTask(task),
                 );
-              },
+              }).toList(),
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: _addTask,
         backgroundColor: Colors.grey[700],
-        child: const Icon(Icons.add, color: Colors.white), // White plus sign
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
